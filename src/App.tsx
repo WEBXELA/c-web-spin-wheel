@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { SpinWheel } from './components/SpinWheel';
 import { EmailForm } from './components/EmailForm';
 import { PrizeModal } from './components/PrizeModal';
-import { saveEmailSubmission } from './lib/supabase';
+import { saveEmailSubmission, isEmailAllowed, insertAllowedEmail, allowAutoApprove, getEmailSubmission } from './lib/supabase';
 import { Sparkles, Star, Gift } from 'lucide-react';
 
 interface EmailFormData {
@@ -17,23 +17,46 @@ function App() {
   const [showPrizeModal, setShowPrizeModal] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [userEmail, setUserEmail] = useState('');
+  const [triggerSpin, setTriggerSpin] = useState(false);
+  const wheelRef = useRef<HTMLDivElement>(null);
 
   const handleEmailSubmit = async (data: EmailFormData) => {
     setIsSubmitting(true);
     try {
+      // Gate: check if email is allowed to spin
+      // Prevent second try: if already has a claimed prize (not pending), block
+      const existing = await getEmailSubmission(data.email);
+      if (existing && existing.prize_won && existing.prize_won !== 'pending') {
+        throw new Error('You have already claimed a prize.');
+      }
+
+      let allowed = await isEmailAllowed(data.email);
+      if (!allowed && allowAutoApprove) {
+        await insertAllowedEmail(data.email);
+        allowed = true;
+      }
+      if (!allowed) throw new Error('Email is not authorized to spin.');
+
+      // Record submission
       await saveEmailSubmission({
         email: data.email,
         name: data.name,
         prize_won: 'pending'
       });
-      
+
       setUserEmail(data.email);
       setHasSubmittedEmail(true);
+      // Scroll to wheel section after a short delay
+      setTimeout(() => {
+        wheelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Automatically trigger spin after scrolling
+        setTimeout(() => {
+          setTriggerSpin(true);
+        }, 500);
+      }, 150);
     } catch (error) {
-      console.error('Error saving email:', error);
-      // Still allow them to proceed even if there's an error
-      setUserEmail(data.email);
-      setHasSubmittedEmail(true);
+      console.error('Error saving email or not allowed:', error);
+      alert((error as Error)?.message || 'This email is not authorized to spin. Please contact admin.');
     } finally {
       setIsSubmitting(false);
     }
@@ -42,22 +65,30 @@ function App() {
   const handleSpin = async (prize: string) => {
     setIsSpinning(true);
     setCurrentPrize(prize);
-    
-    try {
-      // Update the prize in Supabase
-      await saveEmailSubmission({
-        email: userEmail,
-        name: '',
-        prize_won: prize
-      });
-    } catch (error) {
-      console.error('Error updating prize:', error);
-    }
-    
+    setTriggerSpin(false); // Reset trigger
+    // Do not update Supabase yet; wait for user to claim
     setTimeout(() => {
       setIsSpinning(false);
       setShowPrizeModal(true);
     }, 3000);
+  };
+
+  const handleClaimPrize = async () => {
+    try {
+      await saveEmailSubmission({
+        email: userEmail,
+        name: '',
+        prize_won: currentPrize,
+      });
+    } catch (error) {
+      console.error('Error saving claimed prize:', error);
+    } finally {
+      setShowPrizeModal(false);
+      // Reset UI to initial and redirect to home
+      setHasSubmittedEmail(false);
+      setUserEmail('');
+      setCurrentPrize('');
+    }
   };
 
   return (
@@ -107,16 +138,15 @@ function App() {
         </div>
 
         <div className="flex flex-col items-center justify-center gap-12 max-w-4xl mx-auto">
-          {/* Email Form or Spin Wheel */}
-          {!hasSubmittedEmail ? (
-            <div className="w-full max-w-lg">
-              <EmailForm onSubmit={handleEmailSubmit} isLoading={isSubmitting} />
-            </div>
-          ) : (
-            <div className="flex flex-col items-center">
-              <SpinWheel onSpin={handleSpin} isSpinning={isSpinning} />
-            </div>
-          )}
+          {/* Email Form */}
+          <div className="w-full max-w-lg">
+            <EmailForm onSubmit={handleEmailSubmit} isLoading={isSubmitting} />
+          </div>
+
+          {/* Spin Wheel (always visible, disabled until email submitted) */}
+          <div className="flex flex-col items-center" ref={wheelRef}>
+            <SpinWheel onSpin={handleSpin} isSpinning={isSpinning} canSpin={hasSubmittedEmail} triggerSpin={triggerSpin} />
+          </div>
         </div>
 
         {/* Footer */}
@@ -135,6 +165,7 @@ function App() {
         isOpen={showPrizeModal}
         onClose={() => setShowPrizeModal(false)}
         prize={currentPrize}
+        onClaim={handleClaimPrize}
       />
     </div>
   );

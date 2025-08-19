@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
 
 interface Prize {
@@ -10,110 +10,208 @@ interface Prize {
 }
 
 const prizes: Prize[] = [
-  { id: 1, text: 'FREE RENT', color: '#F59E0B', textColor: '#FFFFFF', canWin: true },
-  { id: 2, text: 'FREE RENT', color: '#0F766E', textColor: '#FFFFFF', canWin: true },
-  { id: 3, text: 'FREE RENT', color: '#F59E0B', textColor: '#FFFFFF', canWin: true },
-  { id: 4, text: '1 YEAR FREE', color: '#0F766E', textColor: '#FFFFFF', canWin: false },
-  { id: 5, text: 'FREE RENT', color: '#F59E0B', textColor: '#FFFFFF', canWin: true },
-  { id: 6, text: 'FREE RENT', color: '#0F766E', textColor: '#FFFFFF', canWin: true },
-  { id: 7, text: 'FREE RENT', color: '#F59E0B', textColor: '#FFFFFF', canWin: true },
-  { id: 8, text: 'FREE RENT', color: '#0F766E', textColor: '#FFFFFF', canWin: true },
+  { id: 1, text: 'FREE RENT 1 YEAR', color: '#F59E0B', textColor: '#FFFFFF', canWin: true },
+  { id: 2, text: 'FREE RENT 1 MONTH', color: '#0F766E', textColor: '#FFFFFF', canWin: true },
+  { id: 3, text: 'FREE RENT 1 YEAR', color: '#F59E0B', textColor: '#FFFFFF', canWin: true },
+  { id: 4, text: 'FREE RENT 1 MONTH', color: '#0F766E', textColor: '#FFFFFF', canWin: true },
+  { id: 5, text: 'FREE RENT 1 YEAR', color: '#F59E0B', textColor: '#FFFFFF', canWin: true },
+  { id: 6, text: 'FREE RENT 1 MONTH', color: '#0F766E', textColor: '#FFFFFF', canWin: true },
+  { id: 7, text: 'FREE RENT 1 YEAR', color: '#F59E0B', textColor: '#FFFFFF', canWin: true },
+  { id: 8, text: 'FREE RENT 1 MONTH', color: '#0F766E', textColor: '#FFFFFF', canWin: true },
 ];
 
 interface SpinWheelProps {
   onSpin: (prize: string) => void;
   isSpinning: boolean;
+  canSpin?: boolean;
+  triggerSpin?: boolean;
 }
 
-export const SpinWheel: React.FC<SpinWheelProps> = ({ onSpin, isSpinning }) => {
+export const SpinWheel: React.FC<SpinWheelProps> = ({ onSpin, isSpinning, canSpin = false, triggerSpin = false }) => {
   const [rotation, setRotation] = useState(0);
+  const [activeIndex, setActiveIndex] = useState<number | null>(null);
   const wheelRef = useRef<HTMLDivElement>(null);
 
-  const handleSpin = () => {
-    if (isSpinning) return;
+  // Auto-trigger spin when triggerSpin prop changes to true
+  useEffect(() => {
+    if (triggerSpin && canSpin && !isSpinning) {
+      handleSpin();
+    }
+  }, [triggerSpin, canSpin, isSpinning]);
 
-    // Filter out prizes that can't win
-    const winnablePrizes = prizes.filter(prize => prize.canWin);
-    const randomWinnablePrize = winnablePrizes[Math.floor(Math.random() * winnablePrizes.length)];
+  const handleSpin = () => {
+    if (isSpinning || !canSpin) return;
+
+    setActiveIndex(null);
+
+    // Force 100% probability: always pick a '1 MONTH' segment
+    const upper = prizes.map((p) => p.text.toUpperCase());
+    const monthIndices = upper.map((t, i) => ({ t, i })).filter(({ t }) => t.includes('1 MONTH')).map(({ i }) => i);
+    const pool = monthIndices.length ? monthIndices : prizes.map((_, i) => i);
+    const chosenIndex = pool[Math.floor(Math.random() * pool.length)];
+    const randomPrize = prizes[chosenIndex];
     
     // Find the index of the selected prize in the original array
-    const prizeIndex = prizes.findIndex(prize => prize.id === randomWinnablePrize.id);
+    const prizeIndex = chosenIndex;
     
-    // Calculate the angle for each segment (360 degrees / 8 segments = 45 degrees each)
+    // Each segment is 45 degrees (360/8)
     const segmentAngle = 360 / prizes.length;
-    const targetAngle = (prizeIndex * segmentAngle) + (segmentAngle / 2);
+    
+    // Calculate the center angle of the selected segment (0° is TOP in our SVG)
+    const segmentCenterAngle = prizeIndex * segmentAngle + (segmentAngle / 2);
+    
+    // Current rotation normalized (0..359)
+    const current = ((rotation % 360) + 360) % 360;
+    
+    // Align the selected segment's center to the top pointer (0°)
+    const alignDelta = ((0 - segmentCenterAngle - current) % 360 + 360) % 360; // 0..359
     
     // Add multiple full rotations for effect (5-8 full rotations)
     const fullRotations = (Math.floor(Math.random() * 4) + 5) * 360;
-    const finalRotation = fullRotations + (360 - targetAngle);
+    const finalRotation = fullRotations + alignDelta;
     
-    setRotation(prev => prev + finalRotation);
+    setRotation(rotation + finalRotation);
     
     // Call onSpin after animation completes
     setTimeout(() => {
-      onSpin(randomWinnablePrize.text);
+      setActiveIndex(prizeIndex);
+      onSpin(randomPrize.text);
     }, 3000);
   };
 
-  const segmentAngle = 360 / prizes.length;
+  const radius = 180;
+  const centerX = 200;
+  const centerY = 200;
 
   return (
     <div className="relative flex flex-col items-center">
       {/* Wheel Container */}
       <div className="relative">
         {/* Pointer */}
-        <div className="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-3 z-10">
-          <div className="w-0 h-0 border-l-6 border-r-6 border-b-12 border-l-transparent border-r-transparent border-b-red-600"></div>
+        <div className="absolute inset-0 z-30 pointer-events-none">
+          <svg width="400" height="400" viewBox="0 0 400 400" className="block mx-auto">
+            <polygon points="188,166 212,166 200,140" fill="#ffffff" stroke="#e5e7eb" strokeWidth="2" />
+          </svg>
         </div>
         
         {/* Wheel */}
         <motion.div
           ref={wheelRef}
-          className="w-96 h-96 rounded-full relative overflow-hidden shadow-2xl border-8 border-yellow-400"
+          className="relative"
           animate={{ rotate: rotation }}
           transition={{ duration: 3, ease: "easeOut" }}
         >
-          {prizes.map((prize, index) => {
-            const startAngle = index * segmentAngle;
-            const endAngle = (index + 1) * segmentAngle;
+          <svg width="400" height="400" viewBox="0 0 400 400" className="drop-shadow-2xl">
+            {/* Wheel segments */}
+            {prizes.map((prize, index) => {
+              const segmentAngle = 360 / prizes.length;
+              const startAngle = index * segmentAngle;
+              const endAngle = (index + 1) * segmentAngle;
+              
+              // Convert angles to radians
+              const startRad = (startAngle - 90) * Math.PI / 180;
+              const endRad = (endAngle - 90) * Math.PI / 180;
+              
+              // Calculate arc coordinates
+              const x1 = centerX + radius * Math.cos(startRad);
+              const y1 = centerY + radius * Math.sin(startRad);
+              const x2 = centerX + radius * Math.cos(endRad);
+              const y2 = centerY + radius * Math.sin(endRad);
+              
+              // Create path for segment
+              const largeArcFlag = segmentAngle > 180 ? 1 : 0;
+              const pathData = [
+                `M ${centerX} ${centerY}`,
+                `L ${x1} ${y1}`,
+                `A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2}`,
+                'Z'
+              ].join(' ');
+
+              const isActive = activeIndex === index;
+              
+              return (
+                <g key={prize.id}>
+                  <path
+                    d={pathData}
+                    fill={prize.color}
+                    stroke={isActive ? '#F59E0B' : '#ffffff'}
+                    strokeWidth={isActive ? 8 : 2}
+                    filter={isActive ? 'drop-shadow(0 0 8px rgba(245, 158, 11, 0.8))' : 'none'}
+                  />
+                  {isActive && (
+                    <path
+                      d={pathData}
+                      fill="rgba(255, 255, 255, 0.12)"
+                    />
+                  )}
+                  {/* Text */}
+                  {(() => {
+                    const segmentMidRad = (startAngle + segmentAngle / 2 - 90) * Math.PI / 180;
+                    const labelX = centerX + (radius * 0.7) * Math.cos(segmentMidRad);
+                    const labelY = centerY + (radius * 0.7) * Math.sin(segmentMidRad);
+                    const main = 'FREE RENT';
+                    const rest = prize.text.replace(/^FREE RENT\s*/i, '').trim();
+                    return (
+                      <text
+                        x={labelX}
+                        y={labelY}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        fill={prize.textColor}
+                        fontWeight="bold"
+                        style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}
+                      >
+                        <tspan x={labelX} dy={-4} fontSize={isActive ? '16' : '14'}>{main}</tspan>
+                        {rest && (
+                          <tspan x={labelX} dy={isActive ? 18 : 16} fontSize={isActive ? '14' : '12'}>{rest}</tspan>
+                        )}
+                      </text>
+                    );
+                  })()}
+                </g>
+              );
+            })}
             
-            return (
-              <div
-                key={prize.id}
-                className="absolute w-full h-full"
-                style={{
-                  background: `conic-gradient(from ${startAngle}deg, ${prize.color} 0deg, ${prize.color} ${segmentAngle}deg, transparent ${segmentAngle}deg)`,
-                  clipPath: `polygon(50% 50%, ${50 + 50 * Math.cos((startAngle - 90) * Math.PI / 180)}% ${50 + 50 * Math.sin((startAngle - 90) * Math.PI / 180)}%, ${50 + 50 * Math.cos((endAngle - 90) * Math.PI / 180)}% ${50 + 50 * Math.sin((endAngle - 90) * Math.PI / 180)}%)`,
-                }}
-              >
-                <div
-                  className="absolute text-sm font-bold transform -translate-x-1/2 -translate-y-1/2"
-                  style={{
-                    color: prize.textColor,
-                    left: `${50 + 35 * Math.cos((startAngle + segmentAngle/2 - 90) * Math.PI / 180)}%`,
-                    top: `${50 + 35 * Math.sin((startAngle + segmentAngle/2 - 90) * Math.PI / 180)}%`,
-                    transform: `translate(-50%, -50%) rotate(${startAngle + segmentAngle/2}deg)`,
-                  }}
-                >
-                  {prize.text}
-                </div>
-              </div>
-            );
-          })}
-          
-          {/* Center Circle */}
-          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-yellow-400 rounded-full border-4 border-white shadow-lg"></div>
+            {/* Center circle */}
+            <circle
+              cx={centerX}
+              cy={centerY}
+              r="32"
+              fill="#F59E0B"
+              stroke="#ffffff"
+              strokeWidth="4"
+            />
+          </svg>
         </motion.div>
+
+        {/* Non-rotating SPIN label overlay */}
+        <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center">
+          <div
+            style={{
+              width: '400px',
+              height: '400px',
+              position: 'relative'
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                left: '50%',
+                top: '50%',
+                transform: 'translate(-50%, -50%)',
+                color: '#ffffff',
+                fontSize: '22px',
+                fontWeight: 800,
+                letterSpacing: '1px'
+              }}
+            >
+              SPIN
+            </div>
+          </div>
+        </div>
       </div>
       
-      {/* Spin Button */}
-      <button
-        onClick={handleSpin}
-        disabled={isSpinning}
-        className="mt-8 bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white font-bold py-4 px-8 rounded-full text-lg shadow-lg transform transition-all duration-200 hover:scale-105 disabled:scale-100 disabled:cursor-not-allowed"
-      >
-        {isSpinning ? 'SPINNING...' : 'SPIN THE WHEEL!'}
-      </button>
+      {/* Spin Button - REMOVED: Spin happens automatically after email submission */}
     </div>
   );
 };

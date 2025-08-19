@@ -6,15 +6,17 @@ interface PrizeModalProps {
   isOpen: boolean;
   onClose: () => void;
   prize: string;
+  onClaim?: () => void;
 }
 
-export const PrizeModal: React.FC<PrizeModalProps> = ({ isOpen, onClose, prize }) => {
+export const PrizeModal: React.FC<PrizeModalProps> = ({ isOpen, onClose, prize, onClaim }) => {
   const [copied, setCopied] = React.useState(false);
 
   const generatePromoCode = (prize: string) => {
-    if (prize.includes('NO WIN')) return null;
-    const percentage = prize.match(/\d+/)?.[0] || '10';
-    return `SPIN${percentage}OFF`;
+    // Optional: generate different codes for different prizes
+    if (!prize.toUpperCase().includes('FREE RENT')) return null;
+    const months = prize.includes('1 YEAR') ? '12' : (prize.match(/\d+/)?.[0] || '1');
+    return `FREERENT${months}`;
   };
 
   const promoCode = generatePromoCode(prize);
@@ -27,8 +29,12 @@ export const PrizeModal: React.FC<PrizeModalProps> = ({ isOpen, onClose, prize }
     }
   };
 
-  const isWin = !prize.includes('NO WIN');
+  const isWin = true; // both options are wins now
+  const displayPrize = prize;
 
+  // Debug logging
+  console.log('Prize:', prize, 'isWin:', isWin);
+  
   return (
     <AnimatePresence>
       {isOpen && (
@@ -37,21 +43,21 @@ export const PrizeModal: React.FC<PrizeModalProps> = ({ isOpen, onClose, prize }
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-          onClick={onClose}
         >
           <motion.div
             initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.5, opacity: 0 }}
             className="bg-white rounded-2xl p-8 max-w-md w-full mx-auto relative"
-            onClick={(e) => e.stopPropagation()}
           >
-            <button
-              onClick={onClose}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="w-6 h-6" />
-            </button>
+            {!isWin && (
+              <button
+                onClick={onClose}
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            )}
 
             <div className="text-center">
               {isWin ? (
@@ -63,7 +69,7 @@ export const PrizeModal: React.FC<PrizeModalProps> = ({ isOpen, onClose, prize }
                     Congratulations! 🎉
                   </h2>
                   <p className="text-2xl font-bold text-yellow-600 mb-6">
-                    You've won 3 Months Free Rent!
+                    You've won {displayPrize}!
                   </p>
                   
                   {promoCode && (
@@ -108,7 +114,13 @@ export const PrizeModal: React.FC<PrizeModalProps> = ({ isOpen, onClose, prize }
               )}
 
               <button
-                onClick={onClose}
+                onClick={() => {
+                  if (isWin && onClaim) {
+                    onClaim();
+                  } else {
+                    onClose();
+                  }
+                }}
                 className="w-full bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 hover:scale-105"
               >
                 {isWin ? 'Claim Your Prize!' : 'Continue Exploring'}
