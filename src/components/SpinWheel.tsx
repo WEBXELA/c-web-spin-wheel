@@ -79,18 +79,37 @@ export const SpinWheel: React.FC<SpinWheelProps> = ({ onSpin, isSpinning, canSpi
     }, 3000);
   };
 
-  const radius = 180;
-  const centerX = 200;
-  const centerY = 200;
+  // Responsive wheel size
+  const getWheelSize = () => {
+    if (typeof window !== 'undefined') {
+      const width = window.innerWidth;
+      if (width < 640) return 280; // sm
+      if (width < 768) return 320; // md
+      if (width < 1024) return 360; // lg
+      return 400; // xl and above
+    }
+    return 400; // default
+  };
+
+  const wheelSize = getWheelSize();
+  const radius = wheelSize * 0.45; // 45% of wheel size for radius
+  const centerX = wheelSize / 2;
+  const centerY = wheelSize / 2;
+  const centerCircleRadius = wheelSize * 0.08; // 8% of wheel size for center circle
 
   return (
-    <div className="relative flex flex-col items-center">
+    <div className="relative flex flex-col items-center w-full">
       {/* Wheel Container */}
       <div className="relative">
         {/* Pointer */}
         <div className="absolute inset-0 z-30 pointer-events-none">
-          <svg width="400" height="400" viewBox="0 0 400 400" className="block mx-auto">
-            <polygon points="188,166 212,166 200,140" fill="#ffffff" stroke="#e5e7eb" strokeWidth="2" />
+          <svg width={wheelSize} height={wheelSize} viewBox={`0 0 ${wheelSize} ${wheelSize}`} className="block mx-auto">
+            <polygon 
+              points={`${centerX - 12},${centerY - centerCircleRadius} ${centerX + 12},${centerY - centerCircleRadius} ${centerX},${centerY - centerCircleRadius - 16}`} 
+              fill="#ffffff" 
+              stroke="#e5e7eb" 
+              strokeWidth="2" 
+            />
           </svg>
         </div>
         
@@ -101,7 +120,7 @@ export const SpinWheel: React.FC<SpinWheelProps> = ({ onSpin, isSpinning, canSpi
           animate={{ rotate: rotation }}
           transition={{ duration: 3, ease: "easeOut" }}
         >
-          <svg width="400" height="400" viewBox="0 0 400 400" className="drop-shadow-2xl">
+          <svg width={wheelSize} height={wheelSize} viewBox={`0 0 ${wheelSize} ${wheelSize}`} className="drop-shadow-2xl">
             {/* Wheel segments */}
             {prizes.map((prize, index) => {
               const segmentAngle = 360 / prizes.length;
@@ -151,6 +170,12 @@ export const SpinWheel: React.FC<SpinWheelProps> = ({ onSpin, isSpinning, canSpi
                     const labelY = centerY + (radius * 0.7) * Math.sin(segmentMidRad);
                     const main = 'FREE RENT';
                     const rest = prize.text.replace(/^FREE RENT\s*/i, '').trim();
+                    
+                    // Responsive font sizes
+                    const mainFontSize = wheelSize < 320 ? 10 : wheelSize < 400 ? 12 : 14;
+                    const restFontSize = wheelSize < 320 ? 8 : wheelSize < 400 ? 10 : 12;
+                    const dyOffset = wheelSize < 320 ? 12 : wheelSize < 400 ? 14 : 16;
+                    
                     return (
                       <text
                         x={labelX}
@@ -161,9 +186,9 @@ export const SpinWheel: React.FC<SpinWheelProps> = ({ onSpin, isSpinning, canSpi
                         fontWeight="bold"
                         style={{ textShadow: '2px 2px 4px rgba(0,0,0,0.5)' }}
                       >
-                        <tspan x={labelX} dy={-4} fontSize={isActive ? '16' : '14'}>{main}</tspan>
+                        <tspan x={labelX} dy={-4} fontSize={isActive ? mainFontSize + 2 : mainFontSize}>{main}</tspan>
                         {rest && (
-                          <tspan x={labelX} dy={isActive ? 18 : 16} fontSize={isActive ? '14' : '12'}>{rest}</tspan>
+                          <tspan x={labelX} dy={isActive ? dyOffset + 2 : dyOffset} fontSize={isActive ? restFontSize + 2 : restFontSize}>{rest}</tspan>
                         )}
                       </text>
                     );
@@ -176,7 +201,7 @@ export const SpinWheel: React.FC<SpinWheelProps> = ({ onSpin, isSpinning, canSpi
             <circle
               cx={centerX}
               cy={centerY}
-              r="32"
+              r={centerCircleRadius}
               fill="#F59E0B"
               stroke="#ffffff"
               strokeWidth="4"
@@ -188,8 +213,8 @@ export const SpinWheel: React.FC<SpinWheelProps> = ({ onSpin, isSpinning, canSpi
         <div className="absolute inset-0 z-40 pointer-events-none flex items-center justify-center">
           <div
             style={{
-              width: '400px',
-              height: '400px',
+              width: `${wheelSize}px`,
+              height: `${wheelSize}px`,
               position: 'relative'
             }}
           >
@@ -200,7 +225,7 @@ export const SpinWheel: React.FC<SpinWheelProps> = ({ onSpin, isSpinning, canSpi
                 top: '50%',
                 transform: 'translate(-50%, -50%)',
                 color: '#ffffff',
-                fontSize: '22px',
+                fontSize: wheelSize < 320 ? '16px' : wheelSize < 400 ? '18px' : '22px',
                 fontWeight: 800,
                 letterSpacing: '1px'
               }}

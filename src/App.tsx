@@ -91,72 +91,78 @@ function App() {
     }
   };
 
+  const handleWebsiteClick = () => {
+    window.open('https://www.letscreate.club', '_blank', 'noopener,noreferrer');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 relative overflow-hidden">
-      {/* Animated Background Elements */}
+      {/* Animated Background Elements - Responsive positioning */}
       <div className="absolute inset-0">
-        <div className="absolute top-20 left-20">
-          <div className="w-4 h-4 bg-yellow-400 transform rotate-45"></div>
+        <div className="absolute top-4 left-4 sm:top-20 sm:left-20">
+          <div className="w-2 h-2 sm:w-4 sm:h-4 bg-yellow-400 transform rotate-45"></div>
         </div>
-        <div className="absolute top-40 right-32">
-          <div className="w-3 h-8 bg-red-400 transform rotate-12"></div>
+        <div className="absolute top-8 right-8 sm:top-40 sm:right-32">
+          <div className="w-2 h-4 sm:w-3 sm:h-8 bg-red-400 transform rotate-12"></div>
         </div>
-        <div className="absolute bottom-32 left-16">
-          <div className="w-6 h-2 bg-teal-500 rounded-full"></div>
+        <div className="absolute bottom-8 left-4 sm:bottom-32 sm:left-16">
+          <div className="w-3 h-1 sm:w-6 sm:h-2 bg-teal-500 rounded-full"></div>
         </div>
-        <div className="absolute bottom-20 right-24">
-          <div className="w-2 h-6 bg-yellow-500"></div>
+        <div className="absolute bottom-4 right-6 sm:bottom-20 sm:right-24">
+          <div className="w-1 h-3 sm:w-2 sm:h-6 bg-yellow-500"></div>
         </div>
-        <div className="absolute top-1/2 left-10">
-          <div className="w-8 h-1 bg-teal-600 rounded-full transform -rotate-45"></div>
+        <div className="absolute top-1/2 left-2 sm:left-10">
+          <div className="w-4 h-1 sm:w-8 sm:h-1 bg-teal-600 rounded-full transform -rotate-45"></div>
         </div>
-        <div className="absolute top-1/3 right-16">
-          <div className="w-1 h-8 bg-red-500 rounded-full transform rotate-12"></div>
+        <div className="absolute top-1/3 right-4 sm:right-16">
+          <div className="w-1 h-4 sm:w-1 sm:h-8 bg-red-500 rounded-full transform rotate-12"></div>
         </div>
       </div>
 
-      <div className="relative z-10 container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="text-center mb-12">
-          <div className="mb-6">
-            <h2 className="text-2xl md:text-3xl font-bold text-teal-800 mb-2">
-              Let's Create
-            </h2>
-            <p className="text-lg text-gray-600">
-              Co-Working Offices - Fitness & Wellness
-            </p>
+      <div className="relative z-10 container mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        {/* Header - Logo */}
+        <div className="text-center mb-6 sm:mb-8 md:mb-12">
+          <div className="mb-4 sm:mb-6">
+            <img 
+              src="/plain logo.png" 
+              alt="Let's Create Logo" 
+              className="mx-auto w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-40 lg:h-40 xl:w-44 xl:h-44 2xl:w-48 2xl:h-48 object-contain"
+            />
           </div>
-          <h1 className="text-4xl md:text-6xl font-bold text-yellow-500 mb-6">
+          <h1 className="text-responsive-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-yellow-500 mb-4 sm:mb-6">
             Win 1 Year Free Rent!
           </h1>
-          <p className="text-xl md:text-2xl text-teal-700 mb-2">
+          <p className="text-responsive-lg sm:text-xl md:text-2xl text-teal-700 mb-1 sm:mb-2">
             Enter your email below for your
           </p>
-          <p className="text-xl md:text-2xl text-teal-700">
+          <p className="text-responsive-lg sm:text-xl md:text-2xl text-teal-700">
             chance to spin the wheel and win.
           </p>
         </div>
 
-        <div className="flex flex-col items-center justify-center gap-12 max-w-4xl mx-auto">
+        <div className="flex flex-col items-center justify-center gap-6 sm:gap-8 md:gap-12 max-w-4xl mx-auto">
           {/* Email Form */}
-          <div className="w-full max-w-lg">
+          <div className="w-full max-w-sm sm:max-w-md md:max-w-lg">
             <EmailForm onSubmit={handleEmailSubmit} isLoading={isSubmitting} />
           </div>
 
           {/* Spin Wheel (always visible, disabled until email submitted) */}
-          <div className="flex flex-col items-center" ref={wheelRef}>
+          <div className="flex flex-col items-center w-full" ref={wheelRef}>
             <SpinWheel onSpin={handleSpin} isSpinning={isSpinning} canSpin={hasSubmittedEmail} triggerSpin={triggerSpin} />
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="text-center mt-16 text-gray-600">
-          <p className="text-sm">
+        {/* Footer - Responsive text */}
+        <div className="text-center mt-8 sm:mt-12 md:mt-16 text-gray-600">
+          <p className="text-xs sm:text-sm">
             Terms & conditions apply. One entry per person.
           </p>
-          <p className="text-sm mt-2 font-semibold">
+          <button
+            onClick={handleWebsiteClick}
+            className="text-xs sm:text-sm mt-1 sm:mt-2 font-semibold text-teal-600 hover:text-teal-800 transition-colors cursor-pointer underline"
+          >
             www.letscreate.club
-          </p>
+          </button>
         </div>
       </div>
 

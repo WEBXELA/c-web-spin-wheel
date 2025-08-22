@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { insertAllowedEmail, upsertAllowedEmails } from '../lib/supabase';
 
 function normalizeEmailsFromText(text: string): string[] {
@@ -19,8 +19,16 @@ const Admin: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
 
   const parsedBulkEmails = useMemo(() => normalizeEmailsFromText(bulkText), [bulkText]);
+
+  // Generate QR code URL for www.letscreate.club
+  useEffect(() => {
+    const websiteUrl = 'https://www.letscreate.club';
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(websiteUrl)}`;
+    setQrCodeUrl(qrApiUrl);
+  }, []);
 
   const handleSingleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -72,6 +80,24 @@ const Admin: React.FC = () => {
     const text = await file.text();
     // Accept CSV with or without header. Pull any emails we can find.
     setBulkText(text);
+  };
+
+  const downloadQRCode = async () => {
+    try {
+      const response = await fetch(qrCodeUrl);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'letscreate-club-qr-code.png';
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error('Error downloading QR code:', error);
+      alert('Failed to download QR code. Please try again.');
+    }
   };
 
   return (
@@ -127,6 +153,32 @@ const Admin: React.FC = () => {
                 {isSubmitting ? 'Importing...' : 'Import Emails'}
               </button>
             </form>
+          </section>
+
+          <section className="bg-white p-6 rounded-xl shadow">
+            <h2 className="text-xl font-semibold mb-4">QR Code Creator</h2>
+            <p className="text-sm text-gray-500 mb-4">
+              Generate and download QR codes for instant website access - scan to visit!
+            </p>
+            <div className="flex flex-col items-center gap-4">
+              {qrCodeUrl && (
+                <div className="border-2 border-gray-200 rounded-lg p-4 bg-white">
+                  <img 
+                    src={qrCodeUrl} 
+                    alt="QR Code for www.letscreate.club" 
+                    className="w-48 h-48"
+                  />
+                </div>
+              )}
+              <div className="text-center">
+                <button
+                  onClick={downloadQRCode}
+                  className="px-6 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                >
+                  Download QR Code
+                </button>
+              </div>
+            </div>
           </section>
 
           {(message || error) && (
