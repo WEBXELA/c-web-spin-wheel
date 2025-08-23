@@ -21,6 +21,8 @@ const Admin: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [singleEmailSuccess, setSingleEmailSuccess] = useState<string | null>(null);
+  const [bulkImportSuccess, setBulkImportSuccess] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const navigate = useNavigate();
   const { getPreviousPage, hasHistory } = useNavigationHistory();
@@ -44,6 +46,7 @@ const Admin: React.FC = () => {
     e.preventDefault();
     setMessage(null);
     setError(null);
+    setSingleEmailSuccess(null);
     const emails = normalizeEmailsFromText(singleEmail);
     if (emails.length !== 1) {
       setError('Enter a valid email.');
@@ -52,9 +55,10 @@ const Admin: React.FC = () => {
     setIsSubmitting(true);
     try {
       await insertAllowedEmail(emails[0]);
-      setMessage(`Added: ${emails[0]}`);
-      alert(`Email added: ${emails[0]}`);
+      setSingleEmailSuccess(`✅ Email added successfully: ${emails[0]}`);
       setSingleEmail('');
+      // Auto-dismiss after 5 seconds
+      setTimeout(() => setSingleEmailSuccess(null), 5000);
     } catch (err: any) {
       setError(err?.message || 'Failed to add email');
     } finally {
@@ -66,6 +70,7 @@ const Admin: React.FC = () => {
     e.preventDefault();
     setMessage(null);
     setError(null);
+    setBulkImportSuccess(null);
     if (parsedBulkEmails.length === 0) {
       setError('No valid emails found.');
       return;
@@ -73,9 +78,11 @@ const Admin: React.FC = () => {
     setIsSubmitting(true);
     try {
       await upsertAllowedEmails(parsedBulkEmails);
-      setMessage(`Processed ${parsedBulkEmails.length} emails.`);
+      setBulkImportSuccess(`✅ Successfully imported ${parsedBulkEmails.length} emails`);
       setBulkText('');
       setFileName(null);
+      // Auto-dismiss after 5 seconds
+      setTimeout(() => setBulkImportSuccess(null), 5000);
     } catch (err: any) {
       setError(err?.message || 'Bulk import failed');
     } finally {
@@ -150,6 +157,13 @@ const Admin: React.FC = () => {
                 {isSubmitting ? 'Adding...' : 'Add'}
               </button>
             </form>
+            {singleEmailSuccess && (
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="text-sm text-green-700 font-medium">
+                  {singleEmailSuccess}
+                </div>
+              </div>
+            )}
           </section>
 
           <section className="bg-white p-6 rounded-xl shadow">
@@ -179,6 +193,13 @@ const Admin: React.FC = () => {
                 {isSubmitting ? 'Importing...' : 'Import Emails'}
               </button>
             </form>
+            {bulkImportSuccess && (
+              <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="text-sm text-green-700 font-medium">
+                  {bulkImportSuccess}
+                </div>
+              </div>
+            )}
           </section>
 
           <section className="bg-white p-6 rounded-xl shadow">
