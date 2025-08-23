@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useNavigationHistory } from '../hooks/useNavigationHistory';
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -9,6 +10,7 @@ const Login: React.FC = () => {
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { getPreviousPage, hasHistory } = useNavigationHistory();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,12 +134,12 @@ const Login: React.FC = () => {
           </div>
 
           <div className="text-center">
-            <a
-              href="/"
+            <button
+              onClick={() => navigate(hasHistory() ? getPreviousPage() : '/')}
               className="font-medium text-teal-600 hover:text-teal-500 text-sm"
             >
-              ← Back to Spin Wheel
-            </a>
+              ← Back to {hasHistory() ? 'Previous Page' : 'Spin Wheel'}
+            </button>
           </div>
         </form>
       </div>

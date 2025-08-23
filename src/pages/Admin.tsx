@@ -1,6 +1,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { insertAllowedEmail, upsertAllowedEmails } from '../lib/supabase';
+import { useNavigationHistory } from '../hooks/useNavigationHistory';
 
 function normalizeEmailsFromText(text: string): string[] {
   const potentialTokens = text
@@ -22,6 +23,7 @@ const Admin: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
   const navigate = useNavigate();
+  const { getPreviousPage, hasHistory } = useNavigationHistory();
 
   const parsedBulkEmails = useMemo(() => normalizeEmailsFromText(bulkText), [bulkText]);
 
@@ -112,7 +114,15 @@ const Admin: React.FC = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-10">
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-3xl font-bold text-teal-800">Admin: Allowed Emails</h1>
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => navigate(hasHistory() ? getPreviousPage() : '/')}
+              className="px-3 py-2 text-teal-600 hover:text-teal-700 text-sm font-medium transition-colors flex items-center gap-1"
+            >
+              ← Back
+            </button>
+            <h1 className="text-3xl font-bold text-teal-800">Admin: Allowed Emails</h1>
+          </div>
           <button
             onClick={handleLogout}
             className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
