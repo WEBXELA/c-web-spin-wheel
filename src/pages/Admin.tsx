@@ -1,4 +1,5 @@
 import React, { useMemo, useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { insertAllowedEmail, upsertAllowedEmails } from '../lib/supabase';
 
 function normalizeEmailsFromText(text: string): string[] {
@@ -20,6 +21,7 @@ const Admin: React.FC = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const navigate = useNavigate();
 
   const parsedBulkEmails = useMemo(() => normalizeEmailsFromText(bulkText), [bulkText]);
 
@@ -29,6 +31,12 @@ const Admin: React.FC = () => {
     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(websiteUrl)}`;
     setQrCodeUrl(qrApiUrl);
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('adminUser');
+    navigate('/login');
+  };
 
   const handleSingleAdd = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,7 +111,15 @@ const Admin: React.FC = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-3xl mx-auto px-4 py-10">
-        <h1 className="text-3xl font-bold text-teal-800 mb-6">Admin: Allowed Emails</h1>
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-3xl font-bold text-teal-800">Admin: Allowed Emails</h1>
+          <button
+            onClick={handleLogout}
+            className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
+          >
+            Logout
+          </button>
+        </div>
 
         <div className="space-y-8">
           <section className="bg-white p-6 rounded-xl shadow">
