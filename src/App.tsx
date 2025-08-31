@@ -126,7 +126,7 @@ function App() {
             <img 
               src="/plain logo.png" 
               alt="Let's Create Logo" 
-              className="mx-auto w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 lg:w-40 lg:h-40 xl:w-44 xl:h-44 2xl:w-48 2xl:h-48 object-contain"
+              className="mx-auto w-24 h-24 sm:w-32 sm:h-32 md:w-36 md:h-36 lg:w-48 lg:h-48 xl:w-52 xl:h-52 2xl:w-56 2xl:h-56 object-contain"
             />
           </div>
           <h1 className="text-responsive-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-yellow-500 mb-4 sm:mb-6">
